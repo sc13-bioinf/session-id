@@ -20,7 +20,11 @@ pub struct State {
 pub struct SessionId {
     session: Box<State>,
 }
+
+type HmacSha256 = Hmac<Sha256>;
+
 impl SessionId {
+
     pub fn new(rounds: usize, salt: Vec<u8>) -> SessionId {
         let mut array = [0_u8; 32];
         thread_rng().fill(&mut array);
@@ -38,7 +42,7 @@ impl SessionId {
 
     pub fn get(&self) -> Vec<u8> {
         let mut v = [0_u8; 32];
-        pbkdf2::pbkdf2::<Hmac<Sha256>>(
+        pbkdf2::pbkdf2::<HmacSha256>(
             &self.session.secret,
             &self.session.salt,
 	    (self.session.rounds + self.session.step) as u32,
