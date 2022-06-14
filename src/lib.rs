@@ -80,10 +80,10 @@ mod tests {
     #[test]
     fn it_works() {
         simple_logger::init().unwrap();
-        let salt = hex::decode("aaccee0022446688aaccee0022446688").unwrap();
+        let salt = hex::decode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").unwrap();
         let mut s = super::SessionId::new(1000, salt);
 
-        let ss = hex::decode("aaccee0022446688aaccee0022446688").unwrap();
+        let ss = hex::decode("cccccccccccccccccccccccccccccccc").unwrap();
         s.set_secret(ss.to_vec());
 
         log::info!("r1= {:x?}", &s.get());
