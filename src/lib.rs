@@ -7,7 +7,6 @@ use hmac::Hmac;
 //use log::*;
 use rand::{thread_rng, Rng};
 use sha2::Sha256;
-use percent_encoding::*;
 
 pub struct State {
     secret: Vec<u8>,
@@ -53,9 +52,8 @@ impl SessionId {
 
     pub fn get_b64(&self) -> String {
         let v = self.get();
-        let b64 = base64::encode(&v);
-        let sess = percent_encode(b64.clone().as_bytes(), NON_ALPHANUMERIC).to_string();
-        sess
+        let b64 = base64::encode_config (&v, base64::URL_SAFE_NO_PAD);
+        b64
     }
 
     pub fn next(&mut self) {
