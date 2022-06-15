@@ -3,10 +3,13 @@
 //use std::cell::*;
 //use std::rc::*;
 
-use hmac::Hmac;
 //use log::*;
+
+use rayon::prelude::*;
+
 use rand::{thread_rng, Rng};
-use sha2::Sha256;
+
+mod hmac;
 
 pub struct State {
     secret: Vec<u8>,
@@ -20,7 +23,48 @@ pub struct SessionId {
     session: Box<State>,
 }
 
-type HmacSha256 = Hmac<Sha256>;
+#[inline(always)]
+fn xor(res: &mut [u8], salt: &[u8]) {
+    debug_assert!(salt.len() >= res.len(), "length mismatch in xor");
+    res.iter_mut().zip(salt.iter()).for_each(|(a, b)| *a ^= b);
+}
+
+#[inline(always)]
+fn pbkdf2_body (i: u32, chunk: &mut [u8], prf: &hmac::SimpleHmac, salt: &[u8], rounds: u32)
+{
+    for v in chunk.iter_mut() {
+        *v = 0;
+    }
+
+    let mut salt = {
+        let mut prfc = prf.clone();
+        prfc.update(salt);
+        prfc.update(&(i + 1).to_be_bytes());
+
+        let salt = prfc.finalize_fixed();
+        xor(chunk, &salt);
+        salt
+    };
+
+    for _ in 1..rounds {
+        let mut prfc = prf.clone();
+        prfc.update(&salt);
+        salt = prfc.finalize_fixed();
+
+        xor(chunk, &salt);
+    }
+}
+
+#[inline]
+fn pbkdf2 (password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
+{
+    let n = 8;
+    let prf = hmac::SimpleHmac::new_from_slice (password).expect("PRF initialization failure");
+
+    res.par_chunks_mut (n).enumerate().for_each(|(i, chunk)| {
+        pbkdf2_body(i as u32, chunk, &prf, salt, rounds);
+    });
+}
 
 impl SessionId {
 
@@ -41,7 +85,7 @@ impl SessionId {
 
     pub fn get(&self) -> Vec<u8> {
         let mut v = [0_u8; 32];
-        pbkdf2::pbkdf2::<HmacSha256>(
+        pbkdf2 (
             &self.session.secret,
             &self.session.salt,
 	    (self.session.rounds + self.session.step) as u32,
