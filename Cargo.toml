@@ -7,11 +7,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-digest = { version = "0.10.3", features = ["mac"] }
-sha2 = "0.10.2"
 base64 = "0.13.0"
-rand = "0.5.0"
+digest = { version = "0.10.3", features = ["mac"] }
+env_logger = "0.8.4"
 hex = "*"
-log = "*"
+log = "0.4.0"
+rand = "0.5.0"
 rayon = "1.5"
-simple_logger = "*"
+sha2 = "0.10.2"
+
+[dev-dependencies]
+test-log = "0.2.10"

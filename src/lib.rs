@@ -1,13 +1,7 @@
 
-//use std::sync::*;
-//use std::cell::*;
-//use std::rc::*;
-
-//use log::*;
-
-use rayon::prelude::*;
-
+use log::debug;
 use rand::{thread_rng, Rng};
+use rayon::prelude::*;
 
 mod hmac;
 
@@ -94,9 +88,12 @@ impl SessionId {
         v.to_vec()
     }
 
-    pub fn get_b64(&self) -> String {
+    pub fn get_b64(&self)
+        -> String
+    {
+        debug! ("get_b64.secret: {:x?}", self.get_secret ());
         let v = self.get();
-        log::debug! ("get_b64.v {:x?}", &v);
+        debug! ("get_b64.v {:x?}", &v);
         let b64 = base64::encode_config (&v, base64::URL_SAFE_NO_PAD);
         b64
     }
@@ -124,24 +121,62 @@ impl SessionId {
 
 #[cfg(test)]
 mod tests {
+
+    use log::info;
+    use test_log::test;
+
     #[test]
     fn it_works() {
-        simple_logger::init().unwrap();
         let salt = hex::decode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").unwrap();
         let mut s = super::SessionId::new(1000, salt);
 
         let ss = hex::decode("cccccccccccccccccccccccccccccccc").unwrap();
         s.set_secret(ss.to_vec());
 
-        log::info!("r1= {:x?}", &s.get());
-        log::info!("r1= {:x?}", &s.get());
+        info!("r1= {:x?}", &s.get());
+        info!("r1= {:x?}", &s.get());
         s.next();
-        log::info!("r1= {:x?}", &s.get());
-        log::info!("r1= {:x?}", &s.get());
+        info!("r1= {:x?}", &s.get());
+        info!("r1= {:x?}", &s.get());
         s.next();
-        log::info!("r1= {:x?}", &s.get());
-        log::info!("r1= {}", &s.get_b64());
+        info!("r1= {:x?}", &s.get());
+        info!("r1= {}", &s.get_b64());
 
         assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn it_works_ns ()
+    {
+        let salt = hex::decode("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").unwrap();
+        let s = super::SessionId::new(1000, salt);
+
+        info!("r2= {:x?}", &s.get());
+        info!("r2= {:x?}", &s.get());
+        info!("r2= {:x?}", &s.get());
+
+        assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn it_works_short_salt ()
+    {
+        // Sha256 block is 512 bits == 8 * 32 (here we use only 8 * 16)
+        //let salt = hex::decode("aaaaaaaaaaaaaaaa").unwrap();
+        let salt = "foobar".as_bytes ().to_vec ();
+        let s = super::SessionId::new(1000, salt);
+
+        //info!("r3= {:x?}", &s.get());
+       // info!("r3= {:x?}", &s.get());
+        //info!("r3= {:x?}", &s.get());
+        //info!("r3= {:x?}", &s.get());
+
+        info!("r4= {}", &s.get_b64());
+        info!("r4= {}", &s.get_b64());
+        info!("r4= {}", &s.get_b64());
+        info!("r4= {}", &s.get_b64());
+
+        assert_eq!(2 + 2, 4);
+
     }
 }
