@@ -96,6 +96,7 @@ impl SessionId {
 
     pub fn get_b64(&self) -> String {
         let v = self.get();
+        log::debug! ("get_b64.v {:x?}", &v);
         let b64 = base64::encode_config (&v, base64::URL_SAFE_NO_PAD);
         b64
     }
